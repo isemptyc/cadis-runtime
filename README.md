@@ -60,7 +60,9 @@ docker build -f docker/Dockerfile -t cadis-runtime:latest .
 ## Run Container
 
 ```bash
-docker run --rm -p 5000:5000 \
+docker run \
+  --name cadis-tw \
+  -p 5000:5000 \
   -e CADIS_REGION_ISO2=TW \
   cadis-runtime:latest
 ```
@@ -72,7 +74,9 @@ docker run --rm -p 5000:5000 \
 To preserve the dataset cache across container restarts, mount a Docker volume:
 
 ```bash
-docker run --rm -p 5000:5000 \
+docker run \
+  --name cadis-tw \
+  -p 5000:5000 \
   -e CADIS_REGION_ISO2=TW \
   -v cadis_cache_tw:/opt/cadis/cache \
   cadis-runtime:latest
