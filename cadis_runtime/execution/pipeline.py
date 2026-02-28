@@ -128,9 +128,52 @@ class CadisLookupPipeline:
             }
         return {}
 
+    def _build_offshore_result(self) -> dict[str, Any]:
+        return {
+            "lookup_status": "ok",
+            "engine": "cadis",
+            "version": __version__,
+            "result": {
+                "country": {
+                    "level": 2,
+                    "name": self.country_name,
+                },
+                "admin_hierarchy": [],
+                "source": "offshore",
+            },
+        }
+
+    def _nearby_enabled(self) -> bool:
+        return (
+            self.policy.nearby_fallback_enabled
+            and self.policy.nearby_max_distance_km is not None
+            and self.policy.offshore_max_distance_km is not None
+            and self.geometry_index.has_country_scope_geometry()
+        )
+
     def lookup(self, lat: float, lon: float) -> dict[str, Any]:
         pt = SimpleNamespace(x=float(lon), y=float(lat))
         polygon_hits = self.geometry_index.query_point(pt, self.allowed_levels)
+
+        if not polygon_hits and self._nearby_enabled():
+            is_inside_country_scope = self.geometry_index.country_scope_contains_point(pt)
+            if not is_inside_country_scope:
+                distance_km = self.geometry_index.distance_km_to_country_scope(pt)
+                nearby_km = float(self.policy.nearby_max_distance_km)
+                offshore_km = float(self.policy.offshore_max_distance_km)
+
+                if distance_km <= nearby_km:
+                    polygon_hits = self.geometry_index.query_point_nearest(
+                        pt,
+                        nearby_km,
+                        self.allowed_levels,
+                    )
+                elif distance_km <= offshore_km:
+                    return apply_semantic_overlays(
+                        self._build_offshore_result(),
+                        self.semantic_overlays,
+                    )
+
         bundle = self.core.run_v2_shadow_pipeline(
             polygon_hits=polygon_hits,
             allowed_levels=self.allowed_levels,
@@ -150,4 +193,3 @@ class CadisLookupPipeline:
 
 
 RuntimeLookupPipeline = CadisLookupPipeline
-

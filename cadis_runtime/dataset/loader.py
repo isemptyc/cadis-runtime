@@ -30,6 +30,9 @@ class RuntimePolicy:
     repair_child_levels: set[int]
     hierarchy_required: bool
     repair_required: bool
+    nearby_fallback_enabled: bool
+    nearby_max_distance_km: float | None
+    offshore_max_distance_km: float | None
     optional_layers: tuple[OptionalLayerDeclaration, ...]
 
 
@@ -246,6 +249,60 @@ def load_runtime_policy(dataset_dir: str | Path) -> RuntimePolicy:
             reason="repair_rules.child_levels must be in allowed_levels.",
         )
 
+    nearby_raw = raw.get("nearby_policy", {})
+    if nearby_raw is None:
+        nearby_raw = {}
+    if not isinstance(nearby_raw, dict):
+        raise RuntimePolicyInvalidError(
+            dataset_dir=str(root),
+            reason="nearby_policy must be an object when present.",
+        )
+
+    nearby_fallback_enabled = nearby_raw.get("enabled", True)
+    if not isinstance(nearby_fallback_enabled, bool):
+        raise RuntimePolicyInvalidError(
+            dataset_dir=str(root),
+            reason="nearby_policy.enabled must be boolean.",
+        )
+
+    nearby_max_distance_km = nearby_raw.get("max_distance_km", 2.0)
+    if nearby_max_distance_km is not None:
+        if not isinstance(nearby_max_distance_km, (int, float)):
+            raise RuntimePolicyInvalidError(
+                dataset_dir=str(root),
+                reason="nearby_policy.max_distance_km must be number or null.",
+            )
+        if float(nearby_max_distance_km) <= 0:
+            raise RuntimePolicyInvalidError(
+                dataset_dir=str(root),
+                reason="nearby_policy.max_distance_km must be > 0 when present.",
+            )
+        nearby_max_distance_km = float(nearby_max_distance_km)
+
+    offshore_max_distance_km = nearby_raw.get("offshore_max_distance_km", 20.0)
+    if offshore_max_distance_km is not None:
+        if not isinstance(offshore_max_distance_km, (int, float)):
+            raise RuntimePolicyInvalidError(
+                dataset_dir=str(root),
+                reason="nearby_policy.offshore_max_distance_km must be number or null.",
+            )
+        if float(offshore_max_distance_km) <= 0:
+            raise RuntimePolicyInvalidError(
+                dataset_dir=str(root),
+                reason="nearby_policy.offshore_max_distance_km must be > 0 when present.",
+            )
+        offshore_max_distance_km = float(offshore_max_distance_km)
+
+    if (
+        nearby_max_distance_km is not None
+        and offshore_max_distance_km is not None
+        and nearby_max_distance_km > offshore_max_distance_km
+    ):
+        raise RuntimePolicyInvalidError(
+            dataset_dir=str(root),
+            reason="nearby_policy.max_distance_km must be <= nearby_policy.offshore_max_distance_km.",
+        )
+
     optional_layers_raw = raw.get("optional_layers", [])
     if optional_layers_raw is None:
         optional_layers_raw = []
@@ -325,6 +382,9 @@ def load_runtime_policy(dataset_dir: str | Path) -> RuntimePolicy:
         repair_child_levels=repair_child_set,
         hierarchy_required=hierarchy_required,
         repair_required=repair_required,
+        nearby_fallback_enabled=nearby_fallback_enabled,
+        nearby_max_distance_km=nearby_max_distance_km,
+        offshore_max_distance_km=offshore_max_distance_km,
         optional_layers=tuple(optional_layers),
     )
 
@@ -551,4 +611,3 @@ def apply_semantic_overlays(public_bundle: dict[str, Any], overlays: list[Semant
     if ranks_after != ranks_before:
         raise RuntimeError("semantic overlay must not modify/reorder rank sequence.")
     return out
-

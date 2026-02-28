@@ -393,6 +393,36 @@ class FFSFSpatialIndexV3:
             if isinstance(feature_id, str) and feature_id:
                 self.feature_id_to_index[feature_id] = feature_idx
 
+        self.country_scope_feature_indices: list[int] = []
+        self.country_scope_part_indices: list[int] = []
+        for feature_idx, feature in enumerate(self.feature_index):
+            meta = self.feature_meta_by_index[feature_idx]
+            if meta.get("country_scope_flag") is not True:
+                continue
+            self.country_scope_feature_indices.append(feature_idx)
+            for part_idx in range(feature.part_start_idx, feature.part_start_idx + feature.part_count):
+                self.country_scope_part_indices.append(part_idx)
+
+        # Backward compatibility: older datasets may not carry country_scope_flag.
+        # In that case, approximate country scope using the highest structural
+        # level available in geometry metadata (smallest numeric level).
+        if not self.country_scope_feature_indices:
+            min_level = None
+            for meta in self.feature_meta_by_index:
+                level = meta.get("level")
+                if not isinstance(level, int):
+                    continue
+                if min_level is None or level < min_level:
+                    min_level = level
+            if min_level is not None:
+                for feature_idx, feature in enumerate(self.feature_index):
+                    meta = self.feature_meta_by_index[feature_idx]
+                    if meta.get("level") != min_level:
+                        continue
+                    self.country_scope_feature_indices.append(feature_idx)
+                    for part_idx in range(feature.part_start_idx, feature.part_start_idx + feature.part_count):
+                        self.country_scope_part_indices.append(part_idx)
+
     @classmethod
     def from_files(
         cls,
@@ -557,6 +587,29 @@ class FFSFSpatialIndexV3:
             }
 
         return hits
+
+    def has_country_scope_geometry(self) -> bool:
+        return bool(self.country_scope_part_indices)
+
+    def country_scope_contains_point(self, pt: Point) -> bool:
+        for part_idx in self.country_scope_part_indices:
+            if self._part_contains_point(part_idx, pt):
+                return True
+        return False
+
+    def distance_km_to_country_scope(self, pt: Point) -> float:
+        if not self.country_scope_part_indices:
+            return float("inf")
+        if self.country_scope_contains_point(pt):
+            return 0.0
+
+        min_dist = float("inf")
+        for part_idx in self.country_scope_part_indices:
+            minx, miny, maxx, maxy = self.part_bboxes[part_idx]
+            dist = self._distance_km_to_part(pt, part_idx, minx, miny, maxx, maxy)
+            if dist < min_dist:
+                min_dist = dist
+        return min_dist
 
     def distance_km_to_feature_id(self, pt: Point, feature_id: str) -> float:
         feature_idx = self.feature_id_to_index.get(feature_id)
