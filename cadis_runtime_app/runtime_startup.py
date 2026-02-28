@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import json
 import os
 import sys
 
-from cadis_runtime.runtime_bootstrap import (
+from cadis_runtime_app.runtime_bootstrap import (
     DEFAULT_DATASET_MANIFEST_URL,
     bootstrap_country_dataset,
     write_bootstrap_state,
@@ -12,9 +11,9 @@ from cadis_runtime.runtime_bootstrap import (
 
 
 def main() -> int:
-    iso2 = os.getenv("CADIS_REGION_ISO2", "").strip()
+    iso2 = os.getenv("CADIS_COUNTRY_ISO2", "").strip()
     if not iso2:
-        print("CADIS_REGION_ISO2 is required.", file=sys.stderr)
+        print("CADIS_COUNTRY_ISO2 is required.", file=sys.stderr)
         return 2
 
     dataset_manifest_url = os.getenv("CADIS_DATASET_MANIFEST_URL", DEFAULT_DATASET_MANIFEST_URL).strip()
@@ -24,6 +23,8 @@ def main() -> int:
     update_to_latest = update_raw in {"1", "true", "yes", "on"}
     dataset_version = os.getenv("CADIS_DATASET_VERSION", "").strip() or None
 
+    print("cadis-runtime-app: dataset bootstrap started")
+    print("cadis-runtime-app: dataset download in progress")
     state = bootstrap_country_dataset(
         country_iso2=iso2,
         dataset_manifest_url=dataset_manifest_url,
@@ -31,9 +32,12 @@ def main() -> int:
         update_to_latest=update_to_latest,
         dataset_version=dataset_version,
     )
-    state["region_iso2"] = state.pop("country_iso2")
     write_bootstrap_state(state_path, state)
-    print(json.dumps({"status": "bootstrapped", **state}, ensure_ascii=False))
+    print(
+        "cadis-runtime-app: dataset ready "
+        f"(iso2={state['country_iso2']}, dataset={state['dataset_id']}, version={state['dataset_version']})"
+    )
+    print("cadis-runtime-app: startup complete, ready for service")
     return 0
 
 

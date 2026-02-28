@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 
-from cadis_runtime.runtime_bootstrap import read_bootstrap_state
+from cadis_runtime_app.runtime_bootstrap import read_bootstrap_state
 from cadis_runtime.errors import DatasetNotBootstrappedError, RuntimePolicyInvalidError
 from cadis_runtime.execution.pipeline import CadisLookupPipeline
 
@@ -18,7 +18,7 @@ def create_app() -> Flask:
 
     state = read_bootstrap_state(BOOTSTRAP_STATE_PATH)
     dataset_dir = state["dataset_dir"]
-    region_iso2 = state["region_iso2"]
+    country_iso2 = state["country_iso2"]
     runtime = CadisLookupPipeline(dataset_dir=Path(dataset_dir))
 
     @app.get("/health")
@@ -26,7 +26,7 @@ def create_app() -> Flask:
         return (
             {
                 "status": "ok",
-                "region_iso2": region_iso2,
+                "country_iso2": country_iso2,
                 "dataset_id": state.get("dataset_id"),
                 "dataset_version": state.get("dataset_version"),
                 "dataset_dir": dataset_dir,
@@ -60,8 +60,14 @@ def create_app() -> Flask:
         try:
             response = runtime.lookup(lat, lon)
             result = response.get("result")
-            if isinstance(result, dict) and "country" in result:
-                result["region"] = result.pop("country")
+            country_name = ""
+            if isinstance(result, dict):
+                country = result.get("country")
+                if isinstance(country, dict):
+                    name = country.get("name")
+                    if isinstance(name, str):
+                        country_name = name
+                result.pop("country", None)
             nodes = response.get("result", {}).get("admin_hierarchy", [])
             names = []
             for node in nodes:
@@ -69,6 +75,7 @@ def create_app() -> Flask:
                 if isinstance(name, str) and name.strip():
                     names.append(name.strip())
             response["summary_text"] = ", ".join(names)
+            response["iso_context"] = {"iso2": country_iso2, "name": country_name}
             return jsonify(response), 200
         except DatasetNotBootstrappedError as exc:
             return (

@@ -1,9 +1,9 @@
 
 # cadis-runtime
 
-Cadis Runtime is a lightweight, deterministic, dataset-driven execution engine for region-level administrative hierarchy lookup.
+Cadis Runtime is a lightweight, deterministic, dataset-driven execution engine for ISO 3166-1 administrative hierarchy lookup.
 
-It interprets pre-built region datasets and composes final hierarchy results strictly according to dataset-declared policies. The runtime itself does not construct datasets, ingest raw OpenStreetMap data, or perform global routing.
+It interprets pre-built countries/regions datasets and composes final hierarchy results strictly according to dataset-declared policies. The runtime itself does not construct datasets, ingest raw OpenStreetMap data, or perform global routing.
 
 Cadis Runtime is designed to operate offline once a dataset has been bootstrapped and cached.
 
@@ -27,15 +27,16 @@ Cadis Runtime is designed to operate offline once a dataset has been bootstrappe
 
 ## Project Layout
 
-- `cadis_runtime/` — Runtime package (lookup engine, dataset bootstrap logic, Flask API)
+- `cadis_runtime/` — Core runtime package (lookup engine + dataset interpretation)
+- `cadis_runtime_app/` — Docker/API application layer (bootstrap + Flask endpoints)
 - `docker/` — Container build and entrypoint assets
 - `README.md` — User-facing documentation
 
 ---
 
-## Docker Runtime (Single Region per Container)
+## Docker Runtime (Single Country/Region per Container)
 
-Each container instance serves exactly one ISO2 region dataset.
+Each container instance serves exactly one ISO 3166-1 alpha-2 dataset.
 
 At startup, the runtime performs:
 
@@ -63,7 +64,7 @@ docker build -f docker/Dockerfile -t cadis-runtime:latest .
 docker run \
   --name cadis-tw \
   -p 5000:5000 \
-  -e CADIS_REGION_ISO2=TW \
+  -e CADIS_COUNTRY_ISO2=TW \
   cadis-runtime:latest
 ```
 
@@ -77,7 +78,7 @@ To preserve the dataset cache across container restarts, mount a Docker volume:
 docker run \
   --name cadis-tw \
   -p 5000:5000 \
-  -e CADIS_REGION_ISO2=TW \
+  -e CADIS_COUNTRY_ISO2=TW \
   -v cadis_cache_tw:/opt/cadis/cache \
   cadis-runtime:latest
 ```
@@ -88,8 +89,8 @@ Without a mounted volume, the container filesystem is ephemeral and the dataset 
 
 ## Environment Variables
 
-* `CADIS_REGION_ISO2` (required)
-  ISO2 region code to serve (e.g., `TW`).
+* `CADIS_COUNTRY_ISO2` (required)
+  ISO 3166-1 alpha-2 code to serve (e.g., TW, JP, HK).
 
 * `CADIS_CACHE_DIR` (default: `/opt/cadis/cache`)
   Directory where datasets are stored.
@@ -121,7 +122,7 @@ Response:
 
 ```json
 {
-  "region_iso2": "TW",
+  "country_iso2": "TW",
   "dataset_dir": "/opt/cadis/cache/TW/tw.admin/v1.0.2",
   "dataset_id": "tw.admin",
   "dataset_version": "v1.0.2",
@@ -159,11 +160,15 @@ Response (example):
   "engine": "cadis",
   "lookup_status": "ok",
   "summary_text": "臺北市, 信義區",
+  "iso_context": {
+    "iso2": "TW",
+    "name": "Taiwan"
+  },  
   "result": {
     "admin_hierarchy": [
       {
         "level": 4,
-        "name": "台北市",
+        "name": "臺北市",
         "osm_id": "tw_r1293250",
         "rank": 0,
         "source": "polygon"
@@ -175,11 +180,7 @@ Response (example):
         "rank": 1,
         "source": "polygon"
       }
-    ],
-    "region": {
-      "level": 2,
-      "name": "Taiwan"
-    }
+    ]
   },
   "version": "0.1.0"
 }
@@ -201,8 +202,18 @@ Runtime validates dataset integrity via checksum and manifest metadata.
 
 ---
 
-## Supported Countries/Regions
+## ISO Code Policy
+
+Cadis Runtime uses ISO 3166-1 alpha-2 codes as technical routing identifiers.
+
+These codes are interpreted strictly according to the ISO 3166 standard and are used solely for data partitioning and administrative dataset selection.
+
+Cadis does not interpret ISO codes as political statements or sovereignty declarations.
+
+---
+
+## Supported ISO 3166-1 Entities
 
 * `TW` (Taiwan)
 
-Additional region datasets may be added as they are published.
+Additional country/region datasets may be added as they are published.

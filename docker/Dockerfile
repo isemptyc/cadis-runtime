@@ -12,6 +12,7 @@ COPY requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir -r /app/requirements.txt
 
 COPY cadis_runtime /app/cadis_runtime
+COPY cadis_runtime_app /app/cadis_runtime_app
 COPY docker/docker-entrypoint.sh /app/docker-entrypoint.sh
 
 RUN chmod +x /app/docker-entrypoint.sh
