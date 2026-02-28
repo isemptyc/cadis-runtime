@@ -3,7 +3,7 @@
 
 Cadis Runtime is a lightweight, deterministic, dataset-driven execution engine for ISO 3166-1 administrative hierarchy lookup.
 
-It interprets pre-built countries/regions datasets and composes final hierarchy results strictly according to dataset-declared policies. The runtime itself does not construct datasets, ingest raw OpenStreetMap data, or perform global routing.
+It interprets pre-built datasets and composes final hierarchy results strictly according to dataset-declared policies. The runtime itself does not construct datasets, ingest raw OpenStreetMap data, or perform global routing.
 
 Cadis Runtime is designed to operate offline once a dataset has been bootstrapped and cached.
 
@@ -34,7 +34,7 @@ Cadis Runtime is designed to operate offline once a dataset has been bootstrappe
 
 ---
 
-## Docker Runtime (Single Country/Region per Container)
+## Docker Runtime (Single ISO 3166-1 Entity per Container)
 
 Each container instance serves exactly one ISO 3166-1 alpha-2 dataset.
 
@@ -214,6 +214,8 @@ Cadis does not interpret ISO codes as political statements or sovereignty declar
 
 ## Supported ISO 3166-1 Entities
 
-* `TW` (Taiwan)
+| ISO2 | Name   | Dataset ID | Package Size (tar.gz) | Unpacked Size | Release Date |
+|:-----|:-------|:-----------|----------------------:|--------------:|-------------:|
+| TW   | Taiwan | tw.admin   | 1.9 MB                | 2.9 MB        | 2026-02-26   |
 
-Additional country/region datasets may be added as they are published.
+Additional ISO 3166-1 entity datasets will be published as they become available.
