@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import sys
 
-from cadis_runtime_app.runtime_bootstrap import (
+from cadis_runtime_app.bootstrap_adapter import (
     DEFAULT_DATASET_MANIFEST_URL,
     bootstrap_country_dataset,
     write_bootstrap_state,

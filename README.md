@@ -1,7 +1,7 @@
 
 # cadis-runtime
 
-Cadis Runtime is a lightweight, deterministic, dataset-driven execution engine for ISO 3166-1 administrative hierarchy lookup.
+Cadis Runtime is a deterministic execution layer for ISO 3166-1–scoped administrative hierarchy lookup.
 
 It interprets pre-built datasets and composes final hierarchy results strictly according to dataset-declared policies. The runtime itself does not construct datasets, ingest raw OpenStreetMap data, or perform global routing.
 
@@ -27,10 +27,51 @@ Cadis Runtime is designed to operate offline once a dataset has been bootstrappe
 
 ## Project Layout
 
-- `cadis_runtime/` — Core runtime package (lookup engine + dataset interpretation)
-- `cadis_runtime_app/` — Docker/API application layer (bootstrap + Flask endpoints)
+- `packages/cadis-core/` — Country-agnostic structural engine package (`cadis-core`)
+- `packages/cadis-cdn/` — Dataset transport/bootstrap/integrity package (`cadis-cdn`)
+- `cadis_runtime/` — Runtime library package (`cadis-runtime`)
+- `cadis_runtime_app/` — Standalone Docker/API application code (not shipped in `cadis-runtime` wheel)
+- `pyproject.toml` — Packaging metadata for `cadis-runtime` (library distribution)
 - `docker/` — Container build and entrypoint assets
 - `README.md` — User-facing documentation
+
+---
+
+## Library Vs App
+
+- **Library (`cadis-runtime`)**: use in Python code via `CadisRuntime`.
+- **App (`cadis_runtime_app`)**: standalone production-ready Docker service code in this repo.
+
+---
+
+## Python API (Library Entrypoint)
+
+Use `CadisRuntime` as the public runtime contract:
+
+```python
+from cadis_runtime import CadisRuntime
+
+runtime = CadisRuntime(dataset_dir="/path/to/dataset")
+response = runtime.lookup(25.033, 121.5654)
+```
+
+Or use the convenience bootstrap constructor:
+
+```python
+from cadis_runtime import CadisRuntime
+
+runtime = CadisRuntime.from_iso2(
+    "TW",
+    cache_dir="/tmp/cadis-cache",
+    update_to_latest=False,
+)
+response = runtime.lookup(25.033, 121.5654)
+```
+
+`cadis-runtime` declares `cadis-core` and `cadis-cdn` as required dependencies.
+`cadis-core` provides structural engine logic, and `cadis-cdn` provides bootstrap/transport/integrity primitives.
+
+`cadis_runtime.CadisLookupPipeline` and `cadis_runtime.RuntimeLookupPipeline` remain available temporarily as deprecated compatibility imports.
 
 ---
 
@@ -48,6 +89,12 @@ At startup, the runtime performs:
 
 After a dataset has been successfully cached, the runtime can operate fully offline.
 
+Container startup entrypoint:
+
+```bash
+python -m cadis_runtime_app.app_startup
+```
+
 ---
 
 ## Build Image
@@ -55,6 +102,8 @@ After a dataset has been successfully cached, the runtime can operate fully offl
 ```bash
 docker build -f docker/Dockerfile -t cadis-runtime:latest .
 ```
+
+The Docker image installs local monorepo packages directly (`packages/cadis-core`, `packages/cadis-cdn`, and `cadis-runtime` from repo source). PyPI is not required for local container builds.
 
 ---
 
@@ -182,9 +231,11 @@ Response (example):
       }
     ]
   },
-  "version": "0.1.0"
+  "version": "0.1.1"
 }
 ```
+
+The `version` field reflects the installed `cadis-runtime` package version.
 
 ---
 
@@ -214,8 +265,8 @@ Cadis does not interpret ISO codes as political statements or sovereignty declar
 
 ## Supported ISO 3166-1 Entities
 
-| ISO2 | Name   | Dataset ID | Package Size (tar.gz) | Unpacked Size | Release Date |
-|:-----|:-------|:-----------|----------------------:|--------------:|-------------:|
-| TW   | Taiwan | tw.admin   | 1.9 MB                | 2.9 MB        | 2026-02-26   |
+| ISO2 | Name   | Dataset ID | Package Size (tar.gz) | Unpacked Size | Release Date (UTC) |
+|:-----|:-------|:-----------|----------------------:|--------------:|-------------------:|
+| TW   | Taiwan | tw.admin   | 1.9 MB                | 2.9 MB        | 2026-02-26         |
 
 Additional ISO 3166-1 entity datasets will be published as they become available.

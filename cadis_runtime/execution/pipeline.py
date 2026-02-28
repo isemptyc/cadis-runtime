@@ -4,7 +4,7 @@ from pathlib import Path
 from types import SimpleNamespace
 from typing import Any
 
-from cadis_runtime.core import AdminEngineCore
+from cadis_runtime.core_adapter import AdminEngineCore
 from cadis_runtime.dataset.loader import (
     RuntimePolicy,
     apply_semantic_overlays,

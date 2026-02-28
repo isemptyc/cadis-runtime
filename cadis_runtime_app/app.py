@@ -5,9 +5,9 @@ from pathlib import Path
 
 from flask import Flask, jsonify, request
 
-from cadis_runtime_app.runtime_bootstrap import read_bootstrap_state
+from cadis_runtime import CadisRuntime
+from cadis_runtime_app.bootstrap_adapter import read_bootstrap_state
 from cadis_runtime.errors import DatasetNotBootstrappedError, RuntimePolicyInvalidError
-from cadis_runtime.execution.pipeline import CadisLookupPipeline
 
 BOOTSTRAP_STATE_PATH = os.getenv("CADIS_BOOTSTRAP_STATE_PATH", "/tmp/cadis_bootstrap_state.json")
 
@@ -19,7 +19,7 @@ def create_app() -> Flask:
     state = read_bootstrap_state(BOOTSTRAP_STATE_PATH)
     dataset_dir = state["dataset_dir"]
     country_iso2 = state["country_iso2"]
-    runtime = CadisLookupPipeline(dataset_dir=Path(dataset_dir))
+    runtime = CadisRuntime(dataset_dir=Path(dataset_dir))
 
     @app.get("/health")
     def health() -> tuple[dict, int]:
