@@ -4,12 +4,6 @@ import json
 from pathlib import Path
 from typing import Any
 
-from cadis_cdn.bootstrap import (
-    bootstrap_country_dataset as cdn_bootstrap_country_dataset,
-    bootstrap_release_dataset,
-)
-from cadis_cdn.runtime_compat import validate_manifest_runtime_compatibility
-
 from cadis_runtime.dataset.loader import load_runtime_policy
 from cadis_runtime.version import __version__ as CADIS_VERSION
 
@@ -19,6 +13,31 @@ RUNTIME_POLICY_FILE = "runtime_policy.json"
 DEFAULT_DATASET_MANIFEST_URL = (
     "https://raw.githubusercontent.com/isemptyc/cadis-dataset/main/releases/dataset_manifest.json"
 )
+
+
+def _load_cdn_bootstrap():
+    try:
+        from cadis_cdn.bootstrap import (
+            bootstrap_country_dataset as cdn_bootstrap_country_dataset,
+            bootstrap_release_dataset,
+        )
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "cadis-runtime bootstrap features require the optional dependency "
+            "'cadis-cdn'. Install with: pip install 'cadis-runtime[bootstrap]'"
+        ) from exc
+    return cdn_bootstrap_country_dataset, bootstrap_release_dataset
+
+
+def _load_runtime_compat_validator():
+    try:
+        from cadis_cdn.runtime_compat import validate_manifest_runtime_compatibility
+    except ModuleNotFoundError as exc:
+        raise ModuleNotFoundError(
+            "cadis-runtime bootstrap features require the optional dependency "
+            "'cadis-cdn'. Install with: pip install 'cadis-runtime[bootstrap]'"
+        ) from exc
+    return validate_manifest_runtime_compatibility
 
 
 def _validate_runtime_dataset(dataset_dir: Path) -> None:
@@ -56,6 +75,7 @@ def bootstrap_dataset(
     """
     Download + verify release-manifest governed dataset into runtime cache.
     """
+    _, bootstrap_release_dataset = _load_cdn_bootstrap()
     return bootstrap_release_dataset(
         dataset_base,
         country,
@@ -81,6 +101,8 @@ def bootstrap_country_dataset(
     """
     Bootstrap country dataset from dataset-manifest routing entry.
     """
+    cdn_bootstrap_country_dataset, _ = _load_cdn_bootstrap()
+    validate_manifest_runtime_compatibility = _load_runtime_compat_validator()
     return cdn_bootstrap_country_dataset(
         country_iso2=country_iso2,
         dataset_manifest_url=dataset_manifest_url,

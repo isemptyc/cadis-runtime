@@ -42,9 +42,24 @@ Cadis Runtime is designed to operate offline once a dataset has been bootstrappe
 - **Library (`cadis-runtime`)**: use in Python code via `CadisRuntime`.
 - **App (`cadis_runtime_app`)**: standalone production-ready Docker service code in this repo.
 
+## Internal Components
+
+`cadis-core` and `cadis-cdn` are low-level Cadis components intended for internal composition.
+For stable public integration, prefer `cadis-runtime` (and `cadis-global` when available) instead of directly coupling to internal packages.
+
 ---
 
 ## Python API (Library Entrypoint)
+
+Install options:
+
+```bash
+# Deterministic runtime only (dataset_dir mode)
+pip install cadis-runtime
+
+# Include bootstrap helpers (from_iso2 / bootstrap_dataset)
+pip install "cadis-runtime[bootstrap]"
+```
 
 Use `CadisRuntime` as the public runtime contract:
 
@@ -68,8 +83,9 @@ runtime = CadisRuntime.from_iso2(
 response = runtime.lookup(25.033, 121.5654)
 ```
 
-`cadis-runtime` declares `cadis-core` and `cadis-cdn` as required dependencies.
-`cadis-core` provides structural engine logic, and `cadis-cdn` provides bootstrap/transport/integrity primitives.
+`cadis-core` provides structural engine logic.
+`cadis-cdn` provides bootstrap/transport/integrity primitives and is only needed for bootstrap helpers.
+Base `cadis-runtime` depends on `cadis-core` only, while bootstrap helpers use optional extra `cadis-runtime[bootstrap]`.
 
 `cadis_runtime.CadisLookupPipeline` and `cadis_runtime.RuntimeLookupPipeline` remain available temporarily as deprecated compatibility imports.
 

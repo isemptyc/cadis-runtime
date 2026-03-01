@@ -3,9 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from typing import cast
 
-from cadis_runtime.bootstrap import DEFAULT_DATASET_MANIFEST_URL, bootstrap_country_dataset
 from cadis_runtime.execution.pipeline import CadisLookupPipeline
 from cadis_runtime.types import LookupResponse
+
+DEFAULT_DATASET_MANIFEST_URL = (
+    "https://raw.githubusercontent.com/isemptyc/cadis-dataset/main/releases/dataset_manifest.json"
+)
 
 
 class CadisRuntime:
@@ -26,6 +29,8 @@ class CadisRuntime:
         dataset_version: str | None = None,
         country_name: str | None = None,
     ) -> "CadisRuntime":
+        from cadis_runtime.bootstrap import bootstrap_country_dataset
+
         state = bootstrap_country_dataset(
             country_iso2=country_iso2,
             dataset_manifest_url=dataset_manifest_url,

@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from warnings import warn
 
-from cadis_runtime.bootstrap import bootstrap_country_dataset, bootstrap_dataset
 from cadis_runtime.runtime import CadisRuntime
 from cadis_runtime.types import AdminHierarchyNode, CountryInfo, LookupResponse, LookupResult, LookupStatus
 from cadis_runtime.version import __version__
@@ -22,6 +21,18 @@ __all__ = [
 ]
 
 _DEPRECATED_IMPORTS = {"CadisLookupPipeline", "RuntimeLookupPipeline"}
+
+
+def bootstrap_dataset(*args, **kwargs):
+    from cadis_runtime.bootstrap import bootstrap_dataset as _bootstrap_dataset
+
+    return _bootstrap_dataset(*args, **kwargs)
+
+
+def bootstrap_country_dataset(*args, **kwargs):
+    from cadis_runtime.bootstrap import bootstrap_country_dataset as _bootstrap_country_dataset
+
+    return _bootstrap_country_dataset(*args, **kwargs)
 
 
 def __getattr__(name: str):

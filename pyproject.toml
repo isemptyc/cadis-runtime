@@ -9,7 +9,7 @@ description = "Deterministic dataset-driven runtime for ISO 3166-1 admin hierarc
 readme = "README.md"
 requires-python = ">=3.10"
 license = { file = "LICENSE" }
-dependencies = ["cadis-core>=0.1.0", "cadis-cdn>=0.1.0"]
+dependencies = ["cadis-core>=0.1.0"]
 keywords = ["cadis", "geospatial", "administrative-boundaries", "runtime"]
 classifiers = [
   "Development Status :: 3 - Alpha",
@@ -22,6 +22,7 @@ classifiers = [
 ]
 
 [project.optional-dependencies]
+bootstrap = ["cadis-cdn>=0.1.0"]
 api = ["Flask==3.1.0", "gunicorn==23.0.0"]
 
 [tool.setuptools.dynamic]
