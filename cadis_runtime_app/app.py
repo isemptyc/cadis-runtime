@@ -12,6 +12,17 @@ from cadis_runtime.errors import DatasetNotBootstrappedError, RuntimePolicyInval
 BOOTSTRAP_STATE_PATH = os.getenv("CADIS_BOOTSTRAP_STATE_PATH", "/tmp/cadis_bootstrap_state.json")
 
 
+def _format_summary_text(nodes: list[dict], iso2: str) -> str:
+    names: list[str] = []
+    for node in nodes:
+        name = node.get("name")
+        if isinstance(name, str) and name.strip():
+            names.append(name.strip())
+    if iso2.upper() == "JP":
+        names.reverse()
+    return ", ".join(names)
+
+
 def create_app() -> Flask:
     app = Flask(__name__)
     app.json.ensure_ascii = False
@@ -69,12 +80,7 @@ def create_app() -> Flask:
                         country_name = name
                 result.pop("country", None)
             nodes = response.get("result", {}).get("admin_hierarchy", [])
-            names = []
-            for node in nodes:
-                name = node.get("name")
-                if isinstance(name, str) and name.strip():
-                    names.append(name.strip())
-            response["summary_text"] = ", ".join(names)
+            response["summary_text"] = _format_summary_text(nodes, country_iso2)
             response["iso_context"] = {"iso2": country_iso2, "name": country_name}
             return jsonify(response), 200
         except DatasetNotBootstrappedError as exc:
