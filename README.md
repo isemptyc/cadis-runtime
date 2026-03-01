@@ -61,6 +61,11 @@ pip install cadis-runtime
 pip install "cadis-runtime[bootstrap]"
 ```
 
+Choose by use case:
+
+- `pip install cadis-runtime` for deterministic runtime execution with local `dataset_dir`.
+- `pip install "cadis-runtime[bootstrap]"` when you need `CadisRuntime.from_iso2(...)` or bootstrap helpers.
+
 Use `CadisRuntime` as the public runtime contract:
 
 ```python
@@ -71,6 +76,9 @@ response = runtime.lookup(25.033, 121.5654)
 ```
 
 Or use the convenience bootstrap constructor:
+
+`from_iso2(...)` requires `cadis-runtime[bootstrap]` and a writable cache path.
+On local/macOS environments, prefer paths like `/tmp/cadis-cache` instead of `/opt/cadis/cache`.
 
 ```python
 from cadis_runtime import CadisRuntime
@@ -87,11 +95,11 @@ response = runtime.lookup(25.033, 121.5654)
 `cadis-cdn` provides bootstrap/transport/integrity primitives and is only needed for bootstrap helpers.
 Base `cadis-runtime` depends on `cadis-core` only, while bootstrap helpers use optional extra `cadis-runtime[bootstrap]`.
 
-`cadis_runtime.CadisLookupPipeline` and `cadis_runtime.RuntimeLookupPipeline` remain available temporarily as deprecated compatibility imports.
-
 ---
 
 ## Docker Runtime (Single ISO 3166-1 Entity per Container)
+
+This section is app/service mode (`cadis_runtime_app`) and not the Python library return contract.
 
 Each container instance serves exactly one ISO 3166-1 alpha-2 dataset.
 
@@ -115,11 +123,11 @@ python -m cadis_runtime_app.app_startup
 
 ## Build Image
 
+Release-like build (default, installs pinned package from PyPI):
+
 ```bash
 docker build -f docker/Dockerfile -t cadis-runtime:latest .
 ```
-
-The Docker image installs local monorepo packages directly (`packages/cadis-core`, `packages/cadis-cdn`, and `cadis-runtime` from repo source). PyPI is not required for local container builds.
 
 ---
 
@@ -247,7 +255,7 @@ Response (example):
       }
     ]
   },
-  "version": "0.1.1"
+  "version": "0.1.2"
 }
 ```
 
