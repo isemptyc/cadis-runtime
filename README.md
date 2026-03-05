@@ -1,6 +1,12 @@
 
 # cadis-runtime
 
+⚠️ This repository is deprecated.
+
+The functionality previously provided by `cadis-global`
+has been integrated into the unified `cadis` package
+since Cadis v0.2.0.
+
 Cadis Runtime is a deterministic execution layer for ISO 3166-1–scoped administrative hierarchy lookup.
 
 It interprets pre-built datasets and composes final hierarchy results strictly according to dataset-declared policies. The runtime itself does not construct datasets, ingest raw OpenStreetMap data, or perform global routing.
